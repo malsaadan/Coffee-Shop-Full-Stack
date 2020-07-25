@@ -69,11 +69,11 @@ def check_permissions(permission, payload):
     # Check that the passed permission string is included in the payload (authorized)
     if permission not in payload['permissions']:
         raise AuthError({
-            'code': 'forbidden',
-            'description': 'Access Forbidden.'
-            }, 403)
+            'code': 'unauthorized',
+            'description': 'Permission is not found.'
+            }, 401)
 
-    return true
+    return True
 
 
 def verify_decode_jwt(token):
@@ -157,7 +157,7 @@ def requires_auth(permission=''):
                 raise AuthError({
                     "code": "invalid_payload",
                     "description": "Unable to decode payload."
-                }, 400)
+                }, 401)
 
             # Validate claims
             check_permissions(permission, payload)
