@@ -5,15 +5,11 @@ from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = 'fsnd-mashael.eu.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+API_AUDIENCE = 'coffee_shop'
 
 ## AuthError Exception
-'''
-AuthError Exception
-A standardized way to communicate auth failure modes
-'''
 class AuthError(Exception):
     def __init__(self, error, status_code):
         self.error = error
@@ -73,8 +69,8 @@ def check_permissions(permission, payload):
     # Check that the passed permission string is included in the payload (authorized)
     if permission not in payload['permissions']:
         raise AuthError({
-            'code': 'unauthorized',
-            'description': 'Permission not found.'
+            'code': 'forbidden',
+            'description': 'Access Forbidden.'
             }, 403)
 
     return true
@@ -82,7 +78,7 @@ def check_permissions(permission, payload):
 
 def verify_decode_jwt(token):
     # Load public key from Auth0
-    jsonurl = urlopen(f'https://{AUTH0_DOMAIN}}/.well-known/jwks.json')
+    jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
     jwks = json.loads(jsonurl.read())
 
     # Unpack jwt header to verify the kid
@@ -95,7 +91,7 @@ def verify_decode_jwt(token):
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Authorization malformed.'
-            }, 401)
+        }, 401)
 
     # Choose our key
     for key in jwks['keys']:
@@ -108,6 +104,8 @@ def verify_decode_jwt(token):
                 'e': key['e']
             }
 
+    print(rsa_key)
+
     if rsa_key:
         try:
             # Use rsa_key to validate the JWT
@@ -116,33 +114,33 @@ def verify_decode_jwt(token):
                 rsa_key,
                 algorithms=ALGORITHMS,
                 audience=API_AUDIENCE,
-                issuer='https://'+ AUTH0_DOMAIN +'/'
+                issuer='https://' + AUTH0_DOMAIN + '/'
             )
 
             return payload
-
+            
         except jwt.ExpiredSignatureError:
             raise AuthError({
                 'code': 'token_expired',
                 'description': 'Token Expired.'
-                }, 401)
+            }, 401)
 
         except jwt.JWTClaimsError:
             raise AuthError({
                 'code': 'invalid_claims',
                 'description': 'Incorrect claims. Please, check the audience and issuer.'
-                }, 401)
+            }, 401)
         
         except Exception:
             raise AuthError({
                 'code': 'invalid_header',
                 'description': 'Unable to parse authentication token.'
-                }, 400)
+            }, 400)
 
     raise AuthError({
-        'code': 'invalid_header',
-        'description': 'Unable to find the appropriate key.'
-        }, 400)
+            'code': 'invalid_header',
+            'description': 'Unable to find the appropriate key.'
+    }, 400)
 
 
 def requires_auth(permission=''):
@@ -151,8 +149,16 @@ def requires_auth(permission=''):
         def wrapper(*args, **kwargs):
             # Get token
             token = get_token_auth_header()
-            # Decode jwt
-            payload = verify_decode_jwt(token)
+
+            try:
+                # Decode jwt
+                payload = verify_decode_jwt(token)
+            except:
+                raise AuthError({
+                    "code": "invalid_payload",
+                    "description": "Unable to decode payload."
+                }, 400)
+
             # Validate claims
             check_permissions(permission, payload)
             return f(payload, *args, **kwargs)
