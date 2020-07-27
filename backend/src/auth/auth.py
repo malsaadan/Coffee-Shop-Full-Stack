@@ -104,8 +104,6 @@ def verify_decode_jwt(token):
                 'e': key['e']
             }
 
-    print(rsa_key)
-
     if rsa_key:
         try:
             # Use rsa_key to validate the JWT
